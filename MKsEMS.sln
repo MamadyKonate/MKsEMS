@@ -5,7 +5,7 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MKsEMS", "MKsEMS.csproj", "{4180F7A0-4C91-46C9-A9BD-4CC6029A7D3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MKsEMSTestProject", "..\MKsEMSTestProject1\MKsEMSTestProject.csproj", "{CB532324-8A3D-42F2-82BE-DBF761730BA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MKsEMSTestProject1", "..\MKsEMSTestProject1\MKsEMSTestProject1.csproj", "{CB532324-8A3D-42F2-82BE-DBF761730BA0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
