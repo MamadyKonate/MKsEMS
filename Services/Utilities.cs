@@ -1,12 +1,12 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Identity.Client;
+//using Microsoft.Identity.Client;
 using MKsEMS.Data;
 using MKsEMS.Models;
 using Newtonsoft.Json;
 
-namespace MKsEMS.Controllers
+namespace MKsEMS.Services
 {  
     public  class CurrentUser2
     {

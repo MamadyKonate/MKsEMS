@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MKsEMS.Models;
 using MKsEMS.ViewModels;
+using SQLitePCL;
 
 namespace MKsEMS.Data
 {

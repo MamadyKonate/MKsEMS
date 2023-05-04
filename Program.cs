@@ -1,6 +1,7 @@
 using MKsEMS.Data;
 using MKsEMS.ViewModels;
 using MKsEMS.Services;
+using MKsEMS.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
