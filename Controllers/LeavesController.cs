@@ -131,7 +131,9 @@ namespace MKsEMS.Controllers
                         leave.Status = "Pending";                        
 
                         _context.Add(leave);
-                        _context.Users.Update(_currentUser.GetLoggedInUser());
+
+                        //TRACKING ISSUE OCCURS HERE
+ //                       _context.Users.Update(_currentUser.GetLoggedInUser());
 
                         await _context.SaveChangesAsync();
                         return RedirectToAction(nameof(Index));  
