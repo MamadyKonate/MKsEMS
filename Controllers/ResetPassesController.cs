@@ -51,7 +51,7 @@ namespace MKsEMS.Controllers
                 //          View(await _context.ResetPasses.ToListAsync()) :
                 //          Problem("Entity set 'EMSDbContext.ResetPasses'  is null.");
 
-               if( resetPass.CurrentPassword != resetPass.ReEnterNewPassword)
+                if (resetPass.NewPassword != resetPass.ReEnterNewPassword)
                 {
                     TempData["NoMatchingPass"] = "New passwords do not match";
 
@@ -59,20 +59,24 @@ namespace MKsEMS.Controllers
                 }
                 else
                 {
-                    var credentials =  await _context.Credentials.Where(c => c.UserEmail == resetPass.Email).FirstOrDefaultAsync();
-                    if( credentials.UserEmail == null)
+                    var credentials = await _context.Credentials.Where(c => c.UserEmail.ToLower() == resetPass.Email.ToLower()).FirstOrDefaultAsync();
+
+                    if (credentials == null ||
+                        EncDecPassword.DecodeFrom64(credentials.EncPass) != resetPass.CurrentPassword)
                     {
                         TempData["NoMatchingPass"] = "Username or password you entered is incorrect";
-                        View(resetPass);
-                    }   
+                        return View(resetPass);
+                    }
 
                     credentials.EncPass = EncDecPassword.Enc64bitsPass(resetPass.NewPassword);
                     await _context.SaveChangesAsync();
 
-                    return View();                   
-                } 
+                    TempData["NoMatchingPass"] = "Password reset successfully";
+
+                    return View();
+                }
             }
-            return View(resetPass);
+            return View();
         }
 
         
