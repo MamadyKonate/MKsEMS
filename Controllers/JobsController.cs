@@ -39,6 +39,8 @@ namespace MKsEMS.Controllers
         // GET: Jobs/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -63,6 +65,8 @@ namespace MKsEMS.Controllers
         // GET: Jobs/Create
         public IActionResult Create()
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -79,6 +83,8 @@ namespace MKsEMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,JobTitle,Salary,Description,IsActive")] Job job)
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -89,6 +95,7 @@ namespace MKsEMS.Controllers
             {
                 _context.Add(job);
                 await _context.SaveChangesAsync();
+                TempData["AdminMessage"] = $"Job {job.JobTitle} has been successfully created";
                 return RedirectToAction(nameof(Index));
             }
             return View(job);
@@ -97,6 +104,8 @@ namespace MKsEMS.Controllers
         // GET: Jobs/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -123,6 +132,8 @@ namespace MKsEMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,JobTitle,Salary,Description,IsActive")] Job job)
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -152,6 +163,7 @@ namespace MKsEMS.Controllers
                         throw;
                     }
                 }
+                TempData["AdminMessage"] = $"Job {job.JobTitle} has been successfully updated";
                 return RedirectToAction(nameof(Index));
             }
             return View(job);
@@ -186,6 +198,8 @@ namespace MKsEMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            TempData["AdminMessage"] = "";
+
             if (!AdminUserIsLoggedIn())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
@@ -204,20 +218,19 @@ namespace MKsEMS.Controllers
             }
             
             await _context.SaveChangesAsync();
+            TempData["AdminMessage"] = $"Job {job.JobTitle} has been successfully deleted";
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool AdminUserIsLoggedIn()
         {
-            if (_loggedInUser.GetLoggedInUser() == null)
+            if (_loggedInUser == null)
                 return false;
 
-
-            if (_loggedInUser.IsLoggedIn() && _loggedInUser.GetLoggedInUser().IsAdmin)
-                return true;
-
-            return false;
+            return (_loggedInUser.IsLoggedIn() && _loggedInUser.GetLoggedInUser().IsAdmin);                 
         }
+
         private bool JobExists(int id)
         {
           return (_context.Jobs?.Any(e => e.Id == id)).GetValueOrDefault();
