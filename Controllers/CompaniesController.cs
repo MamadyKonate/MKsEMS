@@ -25,6 +25,11 @@ namespace MKsEMS.Controllers
         public async Task<IActionResult> Index()
         {
             TempData["AdminMessage"] = "";
+            //if (!_currentUser.IsLoggedIn())
+            //{
+            //    TempData["AdminMessage"] = "Please login to proceed";
+            //    return RedirectToAction("Index", "UserLogins"); //Only if user is not already logged in;            
+            //}
 
             if (!GrantedAccess())
             {
@@ -32,7 +37,7 @@ namespace MKsEMS.Controllers
 
                 return RedirectToAction("Index", "UserLogins"); //Only if user is not already logged in;
             }
-            return _context.Companies != null ? 
+            return _context.Companies != null ?
                           View(await _context.Companies.ToListAsync()) :
                           Problem("Entity set 'EMSDbContext.Companies'  is null.");
         }
@@ -73,7 +78,7 @@ namespace MKsEMS.Controllers
         {
             TempData["AdminMessage"] = "";
 
-            if (!_currentUser.GetLoggedInUser().IsAdmin)
+            if (!_currentUser.IsLoggedIn() || !_currentUser.GetLoggedInUser().IsAdmin)
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
 
@@ -122,8 +127,13 @@ namespace MKsEMS.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             TempData["AdminMessage"] = "";
+            //if (!_currentUser.IsLoggedIn())
+            //{
+            //    TempData["AdminMessage"] = "Please login to proceed";
+            //    return RedirectToAction("Index", "UserLogins"); //Only if user is not already logged in;            
+            //}
 
-            if (!_currentUser.GetLoggedInUser().IsAdmin)
+            if (!GrantedAccess())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
 
@@ -154,11 +164,12 @@ namespace MKsEMS.Controllers
         /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,AddressLine1,AddressLine2,City,County,Eircode,Phone,Email,LogoURI,IsToBeDeleted")] Company company)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DomainName,Email,LogoURI,IsToBeDeleted")] Company company)
         {
+
             TempData["AdminMessage"] = "";
 
-            if (!_currentUser.GetLoggedInUser().IsAdmin)
+            if (!GrantedAccess())
             {
                 TempData["AdminMessage"] = "Please login as an Administrator";
 
@@ -174,6 +185,12 @@ namespace MKsEMS.Controllers
             {
                 try
                 {
+                    if(company.IsToBeDeleted && CompanyCanNotBeDeleted(id))
+                    {
+                        TempData["CompanyMsg"] = "There in only one Active Company on the system. Please create the Company Details record you whish to use, you can then delete this one.";
+                        return View(company);
+                    }                        
+
                     _context.Update(company);
                     await _context.SaveChangesAsync();
                 }
@@ -196,7 +213,7 @@ namespace MKsEMS.Controllers
         // GET: Companies/Delete/5
         /// <summary>
         ///  Only Administrators, and the CEO are allowed to delete Company
-        ///  There always has be at least one active company
+        ///  There always has be at least one active companyToCheck
         /// </summary>
         /// <param name="id">Id of the selected Company to be deleted</param>
         /// <returns></returns>
@@ -206,30 +223,21 @@ namespace MKsEMS.Controllers
             if (!GrantedAccess())
                 return RedirectToAction("Index", "UserLogins");
 
-
-
             if (id == null || _context.Companies == null)
             {
                 return NotFound();
             }
 
-            var company = await _context.Companies
+            var companyToCheck = await _context.Companies
                 .FirstOrDefaultAsync(m => m.Id == id);
-            
-           int companyCount = _context.Companies.ToList().Where(c => !c.IsToBeDeleted).Count();
-            
-            if(companyCount < 2 && !company.IsToBeDeleted)
+
+            if (CompanyCanNotBeDeleted(id))
             {
-                TempData["CompanyMsg"] = "There in only one Active Company on the system. Please create the Company Details record you whish to use, you can then delete this on.";
+                TempData["CompanyMsg"] = "There in only one Active Company on the system. Please create the Company Details record you whish to use, you can then delete this one.";
                 return RedirectToAction(nameof(Index));                
-            }
+            }           
 
-            if (company == null)
-            {
-            return NotFound();
-            }
-
-            return View(company);
+            return View(companyToCheck);
         }
 
         // POST: Companies/Delete/5
@@ -245,8 +253,14 @@ namespace MKsEMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            TempData["CompanyMsg"] = "";
+
             if (!GrantedAccess())
+            {
+                TempData["AdminMessage"] = "Please login as an Administrator";
                 return RedirectToAction("Index", "UserLogings");
+            }
+               
 
             if (_context.Companies == null)
             {
@@ -270,9 +284,34 @@ namespace MKsEMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private bool CompanyExists(int id)
         {
           return (_context.Companies?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+
+        private  bool CompanyCanNotBeDeleted(int? id)
+        {
+           // var companyToCheck = _context.Companies.FirstOrDefault(m => m.Id == id);
+            
+            var activeCompanies = _context.Companies.Where(c => !c.IsToBeDeleted);
+            
+            if (!(activeCompanies.Count() > 0))
+                return false;
+
+            int companyCount = activeCompanies.Count();
+            
+            return  (companyCount < 2 && activeCompanies.First().Id == id);
         }
         /// <summary>
         /// Checks if the current user should have access to Company details
@@ -280,15 +319,15 @@ namespace MKsEMS.Controllers
         /// </summary>
         /// <returns></returns>
         private bool GrantedAccess()
-        {
-            if (_currentUser.GetLoggedInUser() != null){ //ensure logged in user is not null first before checking its properties
-                
-                if (!_currentUser.GetLoggedInUser().IsCEO || !_currentUser.GetLoggedInUser().IsAdmin)
+        {           
+            if (!_currentUser.IsLoggedIn()) //ensure user is logged in first before checking its properties
                 return false;
-
-            }
-                           
+            
+            if (_currentUser.GetLoggedInUser().IsCEO || _currentUser.GetLoggedInUser().IsAdmin)
             return true;
+            
+                           
+            return false;
         }
     }
 }
